@@ -49,7 +49,7 @@ void sieve(int *fd)
     close(fd[1]);
     if (read(fd[0], &p, 4) != 0)
     {
-        fprintf(2, "prime: %d\n", p);
+        fprintf(2, "prime %d\n", p);
     }
     else
     {
