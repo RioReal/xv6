@@ -83,9 +83,9 @@ void find(char *path, char *name)
         if (st2.type == T_DIR)
         {
             strcpy(sub_path, path);
-            p = sub_path + strlen(sub_path);
-            *p++ = '/';
-            memmove(p, de.name, DIRSIZ);
+            char *p2 = sub_path + strlen(sub_path);
+            *p2++ = '/';
+            memmove(p2, de.name, DIRSIZ);
             find(sub_path, name);
         }
 
