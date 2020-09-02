@@ -102,6 +102,7 @@ extern uint64 sys_write(void);
 extern uint64 sys_uptime(void);
 // add trace
 extern uint64 sys_trace(void);
+extern uint64 sys_sysinfo(void);
 
 static uint64 (*syscalls[])(void) = {
     [SYS_fork] sys_fork,
@@ -127,6 +128,7 @@ static uint64 (*syscalls[])(void) = {
     [SYS_close] sys_close,
     // add trace
     [SYS_trace] sys_trace,
+    [SYS_sysinfo] sys_sysinfo,
 };
 
 static char *systable[32] = {
@@ -152,6 +154,7 @@ static char *systable[32] = {
     "mkdir",
     "close",
     "trace",
+    "sysinfo",
 };
 
 void syscall(void)
