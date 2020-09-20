@@ -455,9 +455,9 @@ void vmprint(pagetable_t pagetable, int depth){
     
     if ((pte & PTE_V))
     { 
-      for (int i = 0; i < depth; i++)
-      {
-        printf(" ..");
+      for (int i = 0; i < depth+1; i++)
+      { 
+          printf(" ..");
       }
       
       printf("%d: pte %p pa %p\n", i, pte, PTE2PA(pte));
@@ -465,8 +465,9 @@ void vmprint(pagetable_t pagetable, int depth){
       {
         // this PTE points to a lower-level page table.
         uint64 child = PTE2PA(pte);
-        vmprint((pagetable_t)child, ++depth);
+        vmprint((pagetable_t)child, depth+1);
       }
     }
   }
+  return;
 }

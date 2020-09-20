@@ -19,7 +19,9 @@ extern void forkret(void);
 static void wakeup1(struct proc *chan);
 static void freeproc(struct proc *p);
 
+extern char etext[];
 extern char trampoline[]; // trampoline.S
+extern pagetable_t kernel_pagetable;
 
 // initialize the proc table at boot time.
 void
@@ -127,6 +129,25 @@ found:
   p->context.ra = (uint64)forkret;
   p->context.sp = p->kstack + PGSIZE;
 
+  // create and fill in the process's kernel page
+  pagetable_t kernelpgt = uvmcreate();
+  
+  mappages(kernelpgt, UART0, PGSIZE, UART0, PTE_R | PTE_W);
+  mappages(kernelpgt, VIRTIO0, PGSIZE, VIRTIO0, PTE_R | PTE_W);
+  mappages(kernelpgt, CLINT, 0x10000, CLINT, PTE_R | PTE_W);
+  mappages(kernelpgt, PLIC, 0x400000, PLIC, PTE_R | PTE_W);
+  mappages(kernelpgt, KERNBASE, (uint64)etext - KERNBASE, KERNBASE, PTE_R | PTE_X);
+  mappages(kernelpgt, (uint64)etext, PHYSTOP - (uint64)etext, (uint64)etext, PTE_R | PTE_W);
+  mappages(kernelpgt, TRAMPOLINE, PGSIZE, (uint64)trampoline, PTE_R | PTE_X);
+
+  // pte_t *pte = walk(kernel_pagetable, p->kstack, 0);
+  // uint64 pa = PTE2PA(*pte);
+  // if (pa == 0)
+  //   panic("walkaddr");
+  // mappages(kernelpgt, p->kstack, PGSIZE, pa, PTE_R | PTE_W);
+
+  p->kernelpgt = kernel_pagetable;
+
   return p;
 }
 
@@ -142,6 +163,12 @@ freeproc(struct proc *p)
   if(p->pagetable)
     proc_freepagetable(p->pagetable, p->sz);
   p->pagetable = 0;
+  if (p->kernelpgt)
+  {
+    // remain to be completed
+  }
+  
+  p->kernelpgt = 0;
   p->sz = 0;
   p->pid = 0;
   p->parent = 0;
@@ -473,6 +500,8 @@ scheduler(void)
         // before jumping back to us.
         p->state = RUNNING;
         c->proc = p;
+        w_satp(MAKE_SATP(p->kernelpgt));
+        sfence_vma();
         swtch(&c->context, &p->context);
 
         // Process is done running for now.
@@ -485,6 +514,8 @@ scheduler(void)
     }
 #if !defined (LAB_FS)
     if(found == 0) {
+      w_satp(MAKE_SATP(kernel_pagetable));
+      sfence_vma();
       intr_on();
       asm volatile("wfi");
     }
